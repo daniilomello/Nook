@@ -51,6 +51,8 @@ struct SidebarBottomBar: View {
 
                     Spacer(minLength: 0)
 
+                    ShortcutsButton()
+
                     // Hide new space button in incognito windows
                     if !windowState.isIncognito {
                         newSpaceButton
@@ -66,8 +68,8 @@ struct SidebarBottomBar: View {
     /// Room kept clear on each side of the dots: the wider cluster plus a gap.
     private var sideReserve: CGFloat {
         let button = NookDesign.SidebarChrome.button, gap = NookDesign.SidebarChrome.gap
-        let left = nookSettings.showAIAssistant ? 2 * button + gap : button
-        return left + gap
+        // Two buttons on the right, shortcuts and new space; the left has two with the assistant.
+        return 2 * button + 2 * gap
     }
 
     private var menuButton: some View {
