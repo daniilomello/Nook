@@ -53,3 +53,10 @@ Legenda: `[x]` feito e verificado · `[~]` feito, falta testar no app · `[ ]` p
 - [ ] 4.4 Sincronizar ajustes de bloqueio entre Mac e iPhone (hoje cada um tem os seus)
 - [~] 4.6 Ícone de teclado na barra inferior da sidebar com a lista de atalhos (o ícone aparece; o painel não foi aberto no app)
 - [ ] 4.5 Investigar um `HTTP 404` do `FilterListManager` no primeiro uso (as 10 listas padrão respondem 200)
+
+## Fase 5 — LinkedIn minimalista
+- [x] 5.1 Tweak nativo (`LinkedInTweaks`, `linkedin-tweaks.css/.js`), ligado por padrão no Mac: barra só com ícones, sem colunas laterais, sem "Start a post", anúncios, sugestões, jogos e janela de mensagens. Regras conferidas no LinkedIn logado (Chromium): feed, perfil, notificações, busca, empresa e rede
+- [x] 5.2 Ajustes em Settings › Tweaks › LinkedIn, com chave por item
+- [x] 5.3 Feed conferido no Nook (WebKit) com a conta logada; as outras páginas só no Chromium
+- [!] Anúncios e sugestões são achados pelo rótulo, na língua da interface (inglês, português, espanhol, francês, alemão, italiano, holandês; só inglês testado)
+- [!] Fora do iPhone: o site móvel tem outra estrutura

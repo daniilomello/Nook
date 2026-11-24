@@ -1,0 +1,64 @@
+/* Nook: LinkedIn minimal view. linkedin-tweaks.js puts what is on, and the kind of page, as words
+   in html[data-nook-linkedin]. Class names on the new pages are scrambled per build, so rules go
+   by structure, icon ids, hrefs and component keys; none depends on the interface language.
+   Company pages and messaging still use the older markup (#global-nav, .scaffold-layout). */
+
+/* Top bar: icons only. Labels stay for VoiceOver. */
+html[data-nook-linkedin~="navLabels"] #root header nav li > :is(a, button) > span:last-child:not(:only-child),
+html[data-nook-linkedin~="navLabels"] #root header [id^="meMenuV2"] figure + div,
+html[data-nook-linkedin~="navLabels"] #global-nav :is(a, button).global-nav__primary-link > span {
+  position: absolute !important; width: 1px !important; height: 1px !important;
+  overflow: hidden !important; clip-path: inset(50%) !important; white-space: nowrap !important;
+}
+html[data-nook-linkedin~="navLabels"] #root header nav li { width: 64px !important; min-width: 0 !important; }
+html[data-nook-linkedin~="navLabels"] #root header nav li > :is(a, button) {
+  width: 64px !important; min-width: 0 !important; position: relative !important;
+  display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important;
+}
+html[data-nook-linkedin~="navLabels"] #root header [id^="meMenuV2"] div:has(> figure) { justify-content: center !important; }
+html[data-nook-linkedin~="navLabels"] #global-nav :is(.global-nav__primary-item, .global-nav__more) { width: 64px !important; }
+html[data-nook-linkedin~="navLabels"] #global-nav .global-nav__primary-link {
+  position: relative !important; width: 100% !important; min-width: 0 !important; justify-content: center !important;
+}
+
+/* Top bar: items turned off. */
+html[data-nook-linkedin~="nav-network"] :is(#root header nav, #global-nav) li:has(> a[href*="/mynetwork"]),
+html[data-nook-linkedin~="nav-jobs"] :is(#root header nav, #global-nav) li:has(> a[href*="/jobs/"]),
+html[data-nook-linkedin~="nav-messaging"] :is(#root header nav, #global-nav) li:has(> a[href*="/messaging/"]),
+html[data-nook-linkedin~="nav-notifications"] :is(#root header nav, #global-nav) li:has(> a[href*="/notifications/"]),
+html[data-nook-linkedin~="nav-business"] #root header nav li:has(> button svg[id^="grid-"]),
+html[data-nook-linkedin~="nav-business"] #global-nav .global-nav__app-launcher-menu,
+html[data-nook-linkedin~="nav-learning"] :is(#root header nav, #global-nav) li:has(> a[href*="/learning"]),
+html[data-nook-linkedin~="nav-premium"] :is(#root header nav, #global-nav) li:has(> a[href*="/premium/"]),
+html[data-nook-linkedin~="nav-business"][data-nook-linkedin~="nav-learning"] #root header hr,
+html[data-nook-linkedin~="nav-business"][data-nook-linkedin~="nav-learning"] #global-nav .global-nav-v2__divider { display: none !important; }
+
+/* Side columns, where they hold nothing the page needs: the job, network and messaging menus stay. */
+html[data-nook-linkedin~="leftColumn"]:is([data-nook-linkedin~="page-feed"], [data-nook-linkedin~="page-post"], [data-nook-linkedin~="page-notifications"], [data-nook-linkedin~="page-search"]) main#workspace aside:has(~ section),
+html[data-nook-linkedin~="rightColumn"]:is([data-nook-linkedin~="page-feed"], [data-nook-linkedin~="page-post"], [data-nook-linkedin~="page-notifications"], [data-nook-linkedin~="page-search"], [data-nook-linkedin~="page-profile"]) main#workspace section ~ aside,
+html[data-nook-linkedin~="rightColumn"]:is([data-nook-linkedin~="page-company"], [data-nook-linkedin~="page-profile"]) .scaffold-layout__aside { display: none !important; }
+
+/* What is left of the 24-column grid sits in the middle of the page. */
+html[data-nook-linkedin~="columns"] main#workspace div:has(> aside):has(> section) {
+  display: flex !important; flex-wrap: wrap !important; justify-content: center !important; align-items: stretch !important; column-gap: 24px !important;
+}
+html[data-nook-linkedin~="columns"] main#workspace div:has(> aside) > section { flex: 0 1 552px !important; min-width: 0 !important; }
+html[data-nook-linkedin~="columns"][data-nook-linkedin~="page-profile"] main#workspace div:has(> aside) > section { flex-basis: 792px !important; }
+html[data-nook-linkedin~="columns"] main#workspace div:has(> section) > aside { flex: 0 0 312px !important; }
+html[data-nook-linkedin~="columns"] main#workspace div:has(> section) > aside:has(~ section) { flex-basis: 216px !important; }
+html[data-nook-linkedin~="columns"] main#workspace div:has(> aside) > footer { flex: 0 0 100% !important; }
+html[data-nook-linkedin~="rightColumn"]:is([data-nook-linkedin~="page-company"], [data-nook-linkedin~="page-profile"]) .scaffold-layout__content--main-aside {
+  grid-template-columns: minmax(0, 804px) !important; grid-template-areas: "main" !important; justify-content: center !important;
+}
+
+/* Feed. Posts are marked by linkedin-tweaks.js. */
+[data-nook-linkedin-hidden] { display: none !important; }
+html[data-nook-linkedin~="composer"] [data-testid="mainFeed"] [role="listitem"]:has(#shareboxProfilePictureComponentRef),
+html[data-nook-linkedin~="promoted"] main#workspace aside div:has(> iframe) { display: none !important; }
+
+/* Innermost section only: the page's own section holds the same link. */
+html[data-nook-linkedin~="games"] main#workspace section:not(:has(section)):has(a[href*="/games/"]),
+html[data-nook-linkedin~="games"] #feedRightNavGamesComponentRef { display: none !important; }
+
+/* The closed Messaging list in the corner; an open conversation is kept, so Message buttons work. */
+html[data-nook-linkedin~="messagingWindow"] .msg-overlay-list-bubble { display: none !important; }

@@ -10,7 +10,7 @@ import SwiftUI
 import NookDesign
 import NookSettings
 
-/// Per-site tweaks: media downloads, Facebook, Reddit, YouTube and SponsorBlock.
+/// Per-site tweaks: media downloads, Facebook, Reddit, LinkedIn, YouTube and SponsorBlock.
 public struct SettingsTweaksTab: View {
     @Environment(NookSettingsService.self) var nookSettings
     @State private var newSite = ""
@@ -65,6 +65,9 @@ public struct SettingsTweaksTab: View {
                 Text("Opens the home feed, subreddits and custom feeds sorted by Hot instead of Best. Choosing another sort still works.")
             }
 
+            #if os(macOS)
+            LinkedInSettingsSections()
+            #endif
 
             YouTubeSettingsSections()
         }
