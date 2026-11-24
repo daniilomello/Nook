@@ -1,0 +1,10 @@
+// Passed to xcodebuild by scripts/ios-install.sh (`-xcconfig`), so it applies to every target
+// of the NookiOS build, Swift packages included.
+//
+// The packages ship their resources with `.copy("Resources")`, which on iOS gives each resource
+// bundle an Info.plist next to a folder called Resources. codesign reads that as an old-style
+// bundle and refuses it ("bundle format unrecognized, invalid, or unsuitable"), and the build
+// stops there. These bundles hold no code: the app's own signature seals their files, so they
+// need no signature of their own. Everything that is not a `.bundle` is signed as usual.
+NOOK_SIGN_bundle = NO
+CODE_SIGNING_ALLOWED = $(NOOK_SIGN_$(WRAPPER_EXTENSION):default=YES)
