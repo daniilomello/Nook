@@ -138,6 +138,8 @@ build-release-signed/
 # notes. adblocker-architecture.md is the one committed doc.
 docs/*
 !docs/adblocker-architecture.md
+# The fork's own plan is tracked.
+!docs/fork/
 tasks/
 .superpowers/
 .playwright-mcp/
