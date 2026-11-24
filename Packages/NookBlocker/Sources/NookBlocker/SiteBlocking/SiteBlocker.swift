@@ -18,6 +18,7 @@ public final class SiteBlocker {
 
     public let store: SiteBlockingStore
     public let adultList: AdultDomainList
+    public let familyFilter = FamilyDNSFilter()
 
     private var compiled: (settings: SiteBlockingSettings, matcher: SiteBlockMatcher)?
     private var recentReports: [ObjectIdentifier: (url: URL, at: Date)] = [:]
@@ -31,9 +32,7 @@ public final class SiteBlocker {
     /// Nil when `url` may load; otherwise which list blocks it.
     public func verdict(for url: URL) -> SiteBlockVerdict? {
         let settings = store.settings
-        if compiled?.settings != settings {
-            compiled = (settings, SiteBlockMatcher(settings: settings))
-        }
+        let matcher = currentMatcher
         var list: HashedDomainList?
         if settings.blockAdult {
             list = adultList.current
@@ -42,7 +41,24 @@ public final class SiteBlocker {
                 adultList.startAutoUpdate { [weak store] in store?.settings.blockAdult == true }
             }
         }
-        return compiled?.matcher.verdict(for: url, adultList: list)
+        return matcher.verdict(for: url, adultList: list, familyFiltered: familyFilter.refuses)
+    }
+
+    private var currentMatcher: SiteBlockMatcher {
+        let settings = store.settings
+        if let compiled, compiled.settings == settings { return compiled.matcher }
+        let matcher = SiteBlockMatcher(settings: settings)
+        compiled = (settings, matcher)
+        return matcher
+    }
+
+    /// For an address `verdict(for:)` let through: asks the family DNS filter about its site,
+    /// when that is switched on and the site has not been asked about yet. Returns the verdict
+    /// once the filter refuses it, nil otherwise. The navigation does not wait for this.
+    public func familyFilterVerdict(for url: URL) async -> SiteBlockVerdict? {
+        guard let host = currentMatcher.familyFilterHost(for: url), !familyFilter.hasAnswer(for: host),
+              await familyFilter.ask(about: host) == true else { return nil }
+        return verdict(for: url)
     }
 
     /// The address to load instead of `url` so a search comes back filtered, or nil when it can

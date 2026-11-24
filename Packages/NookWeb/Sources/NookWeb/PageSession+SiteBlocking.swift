@@ -57,7 +57,37 @@ extension PageSession {
             nookBeganNavigation = nookBegan
             return true
         }
+
+        // A site no list has gets a second opinion while it loads; the page is taken down if
+        // the answer is no. The answer is remembered, so the next visit is refused up front.
+        if navigationAction.targetFrame?.isMainFrame == true {
+            Task { [weak self, weak webView] in
+                guard let verdict = await blocker.familyFilterVerdict(for: url), let self, let webView else { return }
+                self.siteBlockingTakesDown(url, verdict, in: webView)
+            }
+        }
         return false
+    }
+
+    /// Stops a page the family filter refused after its load had begun. Nothing happens when
+    /// the web view has moved on to another site in the meantime.
+    private func siteBlockingTakesDown(_ url: URL, _ verdict: SiteBlockVerdict, in webView: WKWebView) {
+        guard let current = webView.url, SiteBlocker.shared.verdict(for: current) != nil else { return }
+        webView.stopLoading()
+        // A load that had not committed leaves the page before it in place. One that had is
+        // emptied, so nothing of it shows or plays under the blocked page; the page checks its
+        // own address, since the view reports the refused one in both cases for a moment.
+        let host = verdict.host
+        if host.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "." || $0 == "-" || $0 == "_") }) {
+            let script = """
+            (function (blocked) {
+                var host = location.hostname.replace(/^www\\./, '');
+                if (host === blocked || host.endsWith('.' + blocked)) { document.documentElement.innerHTML = ''; }
+            })('\(host)')
+            """
+            webView.evaluateJavaScript(script, completionHandler: nil)
+        }
+        showSiteBlocked(url, verdict, in: webView)
     }
 
     /// Puts the blocked page up. WebKit reports nothing for a navigation cancelled before it

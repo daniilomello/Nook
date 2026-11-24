@@ -113,12 +113,15 @@ struct AdultDomainListTests {
         let info = try #require(adult.info)
         #expect(info.count == list.count)
         #expect(list.count > 100_000)
-        #expect(info.source == AdultDomainList.source.absoluteString)
+        #expect(info.source == AdultDomainSources.all.map(\.name).joined(separator: ", "))
 
         for host in ["pornhub.com", "www.xvideos.com", "pt.pornhub.com", "xhamster.com", "onlyfans.com"] {
             #expect(list.domain(covering: host) != nil, "\(host)")
         }
-        for host in ["google.com", "www.youtube.com", "en.wikipedia.org", "github.com", "apple.com", "reddit.com", "x.com", "imgur.com"] {
+        // In the second source only.
+        #expect(list.domain(covering: "janitorai.com") != nil)
+        for host in ["google.com", "www.youtube.com", "en.wikipedia.org", "github.com", "apple.com", "reddit.com", "x.com", "imgur.com",
+                     "tinder.com", "www.tumblr.com", "character.ai"] {
             #expect(list.domain(covering: host) == nil, "\(host)")
         }
     }

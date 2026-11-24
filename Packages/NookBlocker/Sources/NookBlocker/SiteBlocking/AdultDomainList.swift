@@ -3,11 +3,11 @@
 //  AdultDomainList.swift
 //  NookBlocker
 //
-//  The adult-content domain list: OISD NSFW (https://oisd.nl, GPL-3.0), about half a million
-//  domains. A snapshot ships in the bundle as a HashedDomainList, so it works on first launch
-//  with no network; a newer copy is fetched in the background every few days and kept in
-//  ~/Library/Application Support/<bundle id>/SiteBlocking/. scripts/refresh-adult-domains.sh
-//  renews the bundled snapshot.
+//  The adult-content domain list: the sources in AdultDomainSources merged into one, over half
+//  a million domains. A snapshot ships in the bundle as a HashedDomainList, so it works on
+//  first launch with no network; a newer copy is fetched in the background every few days and
+//  kept in ~/Library/Application Support/<bundle id>/SiteBlocking/.
+//  scripts/refresh-adult-domains.sh renews the bundled snapshot.
 //
 
 import Foundation
@@ -21,18 +21,16 @@ public final class AdultDomainList {
         public var count: Int
         /// When this copy was fetched from the source.
         public var updated: Date
+        /// The names of the sources that went into this copy.
         public var source: String
-        var etag: String?
     }
 
-    /// One domain per line, each standing for its subdomains too.
-    public static let source = URL(string: "https://nsfw.oisd.nl/domainswild2")!
-    public static let sourceName = "OISD NSFW"
+    public static let sourceName = AdultDomainSources.names
     /// How old the copy in use may get before a new one is fetched.
     static let updateInterval: TimeInterval = 3 * 24 * 3600
     /// How often to look at whether an update is due.
     private static let checkInterval: TimeInterval = 3600
-    /// The list is 9 MB of text; anything far past that is not the list.
+    /// The largest source is 9 MB of text; anything far past that is not a list.
     private static let maxDownloadBytes = 64 * 1024 * 1024
     private static let minimumCount = 10_000
 
@@ -160,34 +158,30 @@ public final class AdultDomainList {
         defer { isUpdating = false }
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
 
-        var request = URLRequest(url: Self.source)
-        // 2.5 MB compressed. An automatic check waits for a network that is not metered.
-        if !force {
-            request.allowsConstrainedNetworkAccess = false
-            #if os(iOS)
-            request.allowsExpensiveNetworkAccess = false
-            #endif
-        }
-        if let etag = info?.etag, FileManager.default.fileExists(atPath: cachedList.path) {
-            request.setValue(etag, forHTTPHeaderField: "If-None-Match")
+        // No source is fetched conditionally: the merged list needs the text of all of them.
+        var texts: [URL] = []
+        var used: [String] = []
+        defer { texts.forEach { try? FileManager.default.removeItem(at: $0) } }
+        for source in AdultDomainSources.all {
+            if let file = await download(source, force: force) {
+                texts.append(file)
+                used.append(source.name)
+            } else if source.isRequired {
+                Self.log.warning("Adult domain list: \(source.name) could not be fetched, keeping the copy in use")
+                return false
+            }
         }
 
         do {
-            let (file, response) = try await session.download(for: request)
-            defer { try? FileManager.default.removeItem(at: file) }
-            guard let http = response as? HTTPURLResponse else { return false }
-            if http.statusCode == 304 {
-                markChecked()
-                return false
-            }
-            guard http.statusCode == 200 else {
-                Self.log.warning("Adult domain list: HTTP \(http.statusCode)")
-                return false
-            }
             let limit = Self.maxDownloadBytes
+            let files = texts
             let encoded = await Task.detached(priority: .utility) { () -> Data? in
-                guard let text = try? Data(contentsOf: file, options: .alwaysMapped), text.count <= limit else { return nil }
-                return HashedDomainList.encode(HashedDomainList.hashes(inListText: text))
+                var loaded: [Data] = []
+                for file in files {
+                    guard let text = try? Data(contentsOf: file, options: .alwaysMapped), text.count <= limit else { return nil }
+                    loaded.append(text)
+                }
+                return AdultDomainSources.mergedList(texts: loaded)
             }.value
             guard let encoded, let fresh = HashedDomainList(data: encoded) else {
                 Self.log.warning("Adult domain list: download could not be read, keeping the copy in use")
@@ -200,8 +194,7 @@ public final class AdultDomainList {
             }
             // Whole seconds, which is what the saved file keeps.
             let now = Date(timeIntervalSince1970: Date().timeIntervalSince1970.rounded(.down))
-            let newInfo = Info(count: fresh.count, updated: now, source: Self.source.absoluteString,
-                               etag: http.value(forHTTPHeaderField: "ETag"))
+            let newInfo = Info(count: fresh.count, updated: now, source: used.joined(separator: ", "))
             // Atomic writes replace the file, so the mapping of the old copy stays valid.
             try encoded.write(to: cachedList, options: .atomic)
             try Self.encoder.encode(newInfo).write(to: cachedInfo, options: .atomic)
@@ -211,8 +204,35 @@ public final class AdultDomainList {
             Self.log.info("Adult domain list updated: \(fresh.count) domains")
             return true
         } catch {
-            Self.log.error("Adult domain list: download failed: \(error.localizedDescription)")
+            Self.log.error("Adult domain list: the new copy could not be saved: \(error.localizedDescription)")
             return false
+        }
+    }
+
+    /// One source's text in a temporary file, or nil when it could not be fetched.
+    private func download(_ source: AdultDomainSources.Source, force: Bool) async -> URL? {
+        var request = URLRequest(url: source.url)
+        // A few megabytes compressed. An automatic check waits for a network that is not metered.
+        if !force {
+            request.allowsConstrainedNetworkAccess = false
+            #if os(iOS)
+            request.allowsExpensiveNetworkAccess = false
+            #endif
+        }
+        do {
+            let (file, response) = try await session.download(for: request)
+            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+                Self.log.warning("Adult domain list: \(source.name) answered HTTP \((response as? HTTPURLResponse)?.statusCode ?? 0)")
+                try? FileManager.default.removeItem(at: file)
+                return nil
+            }
+            // The download's own file is removed when this call returns.
+            let kept = FileManager.default.temporaryDirectory.appendingPathComponent("adult-\(UUID().uuidString).txt")
+            try FileManager.default.moveItem(at: file, to: kept)
+            return kept
+        } catch {
+            Self.log.error("Adult domain list: \(source.name) failed: \(error.localizedDescription)")
+            return nil
         }
     }
 }

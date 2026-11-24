@@ -61,6 +61,9 @@ public struct SiteBlockingSettings: Codable, Equatable, Sendable {
     public var blockSocial = true
     /// Blocks the adult domain list and keeps safe search on.
     public var blockAdult = true
+    /// Also asks a family DNS filter about each site opened, which sends the names of the sites
+    /// visited to that service.
+    public var askFamilyFilter = true
     /// Only the social sites whose switch differs from the catalog's default, so a later change
     /// to a default reaches everyone who never touched that switch.
     public var socialSiteOverrides: [String: Bool] = [:]
@@ -71,10 +74,18 @@ public struct SiteBlockingSettings: Codable, Equatable, Sendable {
 
     public init() {}
 
+    private enum CodingKeys: String, CodingKey {
+        case blockSocial, blockAdult, socialSiteOverrides, customDomains, exceptions
+        /// Saved as `askFamilyFilter` while it was off by default. The name changed with the
+        /// default, so a value saved back then does not keep it off.
+        case askFamilyFilter = "familyFilter"
+    }
+
     public init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         blockSocial = try values.decodeIfPresent(Bool.self, forKey: .blockSocial) ?? true
         blockAdult = try values.decodeIfPresent(Bool.self, forKey: .blockAdult) ?? true
+        askFamilyFilter = try values.decodeIfPresent(Bool.self, forKey: .askFamilyFilter) ?? true
         socialSiteOverrides = try values.decodeIfPresent([String: Bool].self, forKey: .socialSiteOverrides) ?? [:]
         customDomains = try values.decodeIfPresent([String].self, forKey: .customDomains) ?? []
         exceptions = try values.decodeIfPresent([String].self, forKey: .exceptions) ?? []

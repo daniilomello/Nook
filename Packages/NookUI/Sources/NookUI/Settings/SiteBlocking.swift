@@ -55,7 +55,15 @@ public struct SettingsSiteBlockingTab: View {
                     adultListStatus
                 }
             } footer: {
-                Text("Blocks the sites on the \(AdultDomainList.sourceName) list and keeps safe search on for Google, Bing, DuckDuckGo, Brave and Yahoo. The list updates automatically every few days.")
+                Text("Blocks the sites on the \(AdultDomainList.sourceName) lists and any address that names adult content, and keeps safe search on for Google, Bing, DuckDuckGo, Brave and Yahoo. The lists update automatically every few days.")
+            }
+
+            if store.settings.blockAdult {
+                Section {
+                    Toggle("Also Ask \(FamilyDNSFilter.serviceName)", isOn: $store.settings.askFamilyFilter)
+                } footer: {
+                    Text("Catches adult sites the lists do not have yet. The name of each site you open, never the page or what you do on it, is sent to Cloudflare's family DNS, in private windows too.")
+                }
             }
 
             domainSection(

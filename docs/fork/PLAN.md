@@ -46,7 +46,10 @@ Um recurso só, com categorias, no pacote compartilhado `NookWeb`: vale para Mac
 
 - Ponto de corte: `PageSession+Navigation.swift`, no `decidePolicyFor` do quadro principal. Domínio bloqueado cancela a navegação e mostra uma página "bloqueado" do próprio navegador.
 - **Redes sociais:** lista curta, cada site com sua chave. Ligados por padrão: Facebook, Instagram, X/Twitter, TikTok, Threads, Reddit, Snapchat, Pinterest, Tumblr e YouTube Shorts. Presentes e desligados: LinkedIn e YouTube inteiro.
-- **Pornografia:** lista OISD NSFW (GPL-3.0, 498.801 domínios), embutida no app como um arquivo de hashes de 4 MB mapeado em memória e atualizada a cada 3 dias. Não usa regras do WebKit, que têm limite de tamanho.
+- **Pornografia**, em três camadas:
+  1. Listas OISD NSFW e HaGeZi NSFW (ambas GPL-3.0) fundidas em 517.319 domínios, embutidas como um arquivo de hashes de 4 MB mapeado em memória e atualizadas a cada 3 dias. Não usa regras do WebKit, que têm limite de tamanho. As listas Block List Project e StevenBlack foram medidas e ficaram de fora: o que só elas têm inclui CDNs, jornais e registradores.
+  2. Nome do endereço: um domínio que diz o que é ("porn", "xxx", "hentai", TLD `.xxx`) é bloqueado mesmo fora das listas.
+  3. Ligada por padrão, com chave nos ajustes: pergunta ao DNS família da Cloudflare sobre cada site aberto. Pega domínios novos de nome neutro, ao custo de enviar à Cloudflare o nome dos sites visitados. A página começa a carregar e é derrubada se a resposta for "bloqueado"; nas visitas seguintes o bloqueio é imediato.
 - Busca segura forçada no Google, Bing, DuckDuckGo, Brave e Yahoo. O modo restrito do YouTube ficou de fora: o WebKit não permite forçá-lo.
 - Iframes de domínios bloqueados também são cortados. Imagens e scripts desses domínios dentro de outras páginas ainda carregam.
 - Ajustes: liga/desliga por categoria, lista própria de domínios, exceções.
@@ -89,6 +92,7 @@ O resto do fork são arquivos novos. Estes são os pontos onde um merge do upstr
 - Chrome: `App/NookCommands.swift`, `Onboarding/OnboardingView.swift`, `Onboarding/Stages/ImportStage.swift`.
 - Bloqueio: `Packages/NookWeb/.../PageSession+Navigation.swift`, `PageSession+Scripts.swift`, `PageLoadError.swift`; `Packages/NookTweaks/.../YouTubeTweaks.swift`; `Packages/NookBlocker/Package.swift`; `Nook/Components/WebsiteView/LoadErrorView.swift`; `Nook/Components/Settings/SettingsUtils.swift` e `SettingsWindow.swift`; `Nook/Managers/ExtensionManager/ExtensionManager+Delegate.swift` e `ExtensionPopupWindow.swift`; `Nook/Managers/LinkPreview/LinkPreviewService.swift`; `NookiOS/BrowserModel+Chrome.swift`, `Chrome/SettingsSheet.swift`, `RootView.swift`, `RootView+iPad.swift`; `scripts/refresh-filter-lists.sh`, `scripts/run-checks.sh`.
 - iOS: `Packages/NookUI/.../Settings/Boosts.swift` (uma linha, correção de build).
+- Atalhos: `Navigation/Sidebar/SidebarBottomBar.swift` (botão de teclado ao lado do "+"). Arquivos novos em `Navigation/` precisam entrar no `project.pbxproj` à mão; os de `Nook/` entram sozinhos.
 
 O andamento está em `docs/fork/TASKS.md`. Os testes rodam com `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer ./scripts/run-checks.sh`.
 
