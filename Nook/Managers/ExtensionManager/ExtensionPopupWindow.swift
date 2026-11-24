@@ -9,6 +9,7 @@
 import AppKit
 import Foundation
 import WebKit
+import NookWeb
 
 /// One extension page in its own small window, the shape `chrome.windows.create({type: "popup"})`
 /// asks for. Bitwarden's locked-vault autofill opens its unlock UI this way; mapping it onto a tab
@@ -47,6 +48,8 @@ final class ExtensionPopupWindow: NSObject, WKWebExtensionWindow, NSWindowDelega
         super.init()
 
         webView.isInspectable = true
+        // Not a PageSession's view, so site blocking is asked here.
+        webView.navigationDelegate = SiteBlockingNavigationGuard.shared
         let delegate = PopupUIDelegate(webView: webView)
         uiDelegate = delegate
         webView.uiDelegate = delegate

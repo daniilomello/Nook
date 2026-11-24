@@ -280,6 +280,8 @@ private struct SettingsDetailPane: View {
             )
         case .adBlocker:
             SettingsAdBlockerTab()
+        case .siteBlocking:
+            SettingsSiteBlockingTab()
         case .tweaks:
             SettingsTweaksTab()
         case .links:

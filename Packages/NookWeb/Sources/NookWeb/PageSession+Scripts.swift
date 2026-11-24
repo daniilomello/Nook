@@ -178,6 +178,8 @@ extension PageSession {
     /// within a page). Takes the address from WebKit and tells everything that follows it.
     func addressChangedWithoutLoad(in webView: WKWebView?) {
         guard let webView, let url = webView.url else { return }
+        // A blocked path reached without a load (YouTube Shorts) is taken back.
+        if siteBlockingTakesBackAddressChange(to: url, in: webView) { return }
         if self.url.absoluteString != url.absoluteString {
             let previous = self.url
             self.url = url

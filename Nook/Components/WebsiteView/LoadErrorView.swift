@@ -8,6 +8,7 @@
 //
 
 import SwiftUI
+import NookBlocker
 import NookDesign
 import NookWeb
 
@@ -22,7 +23,7 @@ struct LoadErrorView: View {
             let host = error.url.host ?? error.url.absoluteString
             let copy = Self.copy(for: error, host: host)
             VStack(spacing: NookDesign.Spacing.xxxl) {
-                NookCornerScene(lampLit: error.kind != .offline)
+                NookCornerScene(lampLit: error.kind != .offline && error.kind != .blocked)
                     .frame(maxWidth: Self.sceneWidth)
                 VStack(spacing: NookDesign.Spacing.md) {
                     Text(copy.title)
@@ -46,6 +47,10 @@ struct LoadErrorView: View {
     /// No Return shortcut: it would take Return from the address bar. A restored tab that has not
     /// loaded yet gets no Close, so a launch while offline cannot close it.
     private var buttons: [DialogButton] {
+        // A blocked site has no Try Again and no way past: only back to where you were.
+        if session.loadError?.kind == .blocked {
+            return [DialogButton(text: session.hasCommittedPage ? "Go Back" : "Close", variant: .primary) { session.leaveFailedLoad() }]
+        }
         let retry = DialogButton(text: "Try Again", variant: .primary) { session.retryFailedLoad() }
         if session.hasCommittedPage {
             return [DialogButton(text: "Go Back") { session.leaveFailedLoad() }, retry]
@@ -69,6 +74,8 @@ struct LoadErrorView: View {
                     "\(host)'s security certificate isn't valid, so Nook didn't open it. Someone could be pretending to be this site.")
         case .other:
             return ("This page wandered off", error.message)
+        case .blocked:
+            return (SiteBlockVerdict.pageTitle, error.message)
         }
     }
 }

@@ -14,6 +14,7 @@ enum SettingsTabs: String, Hashable, CaseIterable {
     case ai
     case privacy
     case adBlocker
+    case siteBlocking
     case tweaks
     case links
     case spaces
@@ -28,6 +29,7 @@ enum SettingsTabs: String, Hashable, CaseIterable {
         case .ai: return "AI"
         case .privacy: return "Privacy"
         case .adBlocker: return "Ad Blocker"
+        case .siteBlocking: return "Site Blocking"
         case .tweaks: return "Tweaks"
         case .links: return "Links"
         case .spaces: return "Spaces"
@@ -44,6 +46,7 @@ enum SettingsTabs: String, Hashable, CaseIterable {
         case .ai: return "sparkles"
         case .privacy: return "lock.shield"
         case .adBlocker: return "shield.lefthalf.filled"
+        case .siteBlocking: return "hand.raised"
         case .tweaks: return "wand.and.stars"
         case .links: return "link"
         case .spaces: return "square.on.square"
@@ -61,6 +64,7 @@ enum SettingsTabs: String, Hashable, CaseIterable {
         case .ai: return ["gemini", "openrouter", "ollama", "mcp"]
         case .privacy: return ["cookies", "cache", "tracking", "website data"]
         case .adBlocker: return ["ads", "filters", "blocking", "allowlist", "whitelist"]
+        case .siteBlocking: return ["social networks", "adult", "porn", "safe search", "blocked sites", "exceptions", "facebook", "instagram", "reddit", "tiktok", "shorts", "focus"]
         case .tweaks: return ["youtube", "shorts", "thumbnails", "sponsorblock", "facebook", "instagram", "reels", "download", "social media"]
         case .links: return ["air traffic control", "routing", "rules", "domains", "external", "mini window"]
         case .spaces: return ["accent", "colour", "color", "rename"]
@@ -84,6 +88,7 @@ enum SettingsTabs: String, Hashable, CaseIterable {
         case .ai: return .purple
         case .privacy: return .blue
         case .adBlocker: return .green
+        case .siteBlocking: return .red
         case .tweaks: return .orange
         case .links: return .mint
         case .spaces: return .cyan
@@ -98,7 +103,7 @@ enum SettingsTabs: String, Hashable, CaseIterable {
         [
             (nil, [.general, .appearance]),
             (nil, [.ai]),
-            (nil, [.privacy, .adBlocker, .links]),
+            (nil, [.privacy, .adBlocker, .siteBlocking, .links]),
             (nil, [.spaces, .shortcuts, .extensions, .developer]),
             (nil, [.tweaks]),
         ]

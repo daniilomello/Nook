@@ -63,6 +63,7 @@ struct RegularRootView: View {
             if let session = model.selectedSession {
                 WebViewContainer(webView: session.activeWebView, bottomInset: 0)
                     .ignoresSafeArea()
+                    .overlay { SiteBlockedView(session: session) }
             } else {
                 EmptyWebsiteView()
             }
