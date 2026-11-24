@@ -17,6 +17,7 @@ struct OnboardingView: View {
     @State private var selectedBrowser: Browsers = .arc
     @State private var isLoading: Bool = false
     @State private var showSafariImportFlow: Bool = false
+    @State private var showChromeImportFlow: Bool = false
 
     var body: some View {
         ZStack {
@@ -37,7 +38,7 @@ struct OnboardingView: View {
                 stageView
                     .transition(.slideAndBlur)
                 Spacer()
-                if !showSafariImportFlow {
+                if !showSafariImportFlow && !showChromeImportFlow {
                     StageFooter(
                         currentStage: currentStage,
                         totalStages: 3,
@@ -55,7 +56,7 @@ struct OnboardingView: View {
         .focusable()
         .focusEffectDisabled()
         .onKeyPress(.return) {
-            if !isLoading && !showSafariImportFlow {
+            if !isLoading && !showSafariImportFlow && !showChromeImportFlow {
                 advance()
                 return .handled
             }
@@ -80,6 +81,21 @@ struct OnboardingView: View {
                     }
                 }
             )
+        } else if showChromeImportFlow {
+            ChromeImportFlow(
+                isLoading: $isLoading,
+                onBack: {
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        showChromeImportFlow = false
+                    }
+                },
+                onComplete: {
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        showChromeImportFlow = false
+                        currentStage += 1
+                    }
+                }
+            )
         } else {
             switch currentStage {
             case 0: HelloStage()
@@ -100,6 +116,10 @@ struct OnboardingView: View {
         if currentStage == 1 && selectedBrowser == .safari {
             withAnimation(.easeInOut(duration: 0.25)) {
                 showSafariImportFlow = true
+            }
+        } else if currentStage == 1 && selectedBrowser == .chrome {
+            withAnimation(.easeInOut(duration: 0.25)) {
+                showChromeImportFlow = true
             }
         } else if currentStage == 1 {
             withAnimation(.easeInOut(duration: 0.25)) {
