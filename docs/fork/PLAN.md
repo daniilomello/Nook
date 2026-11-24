@@ -91,6 +91,7 @@ O resto do fork são arquivos novos. Estes são os pontos onde um merge do upstr
 - Identidade: `Nook.xcodeproj/project.pbxproj` (bundle id), `Nook/Info.plist` (Sparkle), `.gitignore`.
 - Chrome: `App/NookCommands.swift`, `Onboarding/OnboardingView.swift`, `Onboarding/Stages/ImportStage.swift`.
 - Bloqueio: `Packages/NookWeb/.../PageSession+Navigation.swift`, `PageSession+Scripts.swift`, `PageLoadError.swift`; `Packages/NookTweaks/.../YouTubeTweaks.swift`; `Packages/NookBlocker/Package.swift`; `Nook/Components/WebsiteView/LoadErrorView.swift`; `Nook/Components/Settings/SettingsUtils.swift` e `SettingsWindow.swift`; `Nook/Managers/ExtensionManager/ExtensionManager+Delegate.swift` e `ExtensionPopupWindow.swift`; `Nook/Managers/LinkPreview/LinkPreviewService.swift`; `NookiOS/BrowserModel+Chrome.swift`, `Chrome/SettingsSheet.swift`, `RootView.swift`, `RootView+iPad.swift`; `scripts/refresh-filter-lists.sh`, `scripts/run-checks.sh`.
+- LinkedIn: `Packages/NookSettings/.../NookSettingsService.swift` e `SettingsValueTypes.swift`, `Packages/NookUI/.../Settings/Tweaks.swift`, `PageSession+Navigation.swift`, `SettingsUtils.swift`.
 - iOS: `Packages/NookUI/.../Settings/Boosts.swift` (uma linha, correção de build).
 - Atalhos: `Navigation/Sidebar/SidebarBottomBar.swift` (botão de teclado ao lado do "+"). Arquivos novos em `Navigation/` precisam entrar no `project.pbxproj` à mão; os de `Nook/` entram sozinhos.
 

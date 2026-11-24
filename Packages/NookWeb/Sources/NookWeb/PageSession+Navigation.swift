@@ -462,6 +462,9 @@ extension PageSession: WKNavigationDelegate {
                 SocialImageTweaks.apply(for: url, in: webView, settings: settings)
                 FacebookTweaks.apply(for: url, in: webView, settings: settings)
                 RedditTweaks.apply(in: webView, settings: settings)
+                #if os(macOS)
+                LinkedInTweaks.apply(for: url, in: webView, settings: settings)
+                #endif
                 if let blocker = controller?.blocker { BoostTweaks.apply(for: url, in: webView, settings: settings, blocker: blocker) }
             }
         }

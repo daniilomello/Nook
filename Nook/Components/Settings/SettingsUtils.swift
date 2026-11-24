@@ -65,7 +65,7 @@ enum SettingsTabs: String, Hashable, CaseIterable {
         case .privacy: return ["cookies", "cache", "tracking", "website data"]
         case .adBlocker: return ["ads", "filters", "blocking", "allowlist", "whitelist"]
         case .siteBlocking: return ["social networks", "adult", "porn", "safe search", "blocked sites", "exceptions", "facebook", "instagram", "reddit", "tiktok", "shorts", "focus"]
-        case .tweaks: return ["youtube", "shorts", "thumbnails", "sponsorblock", "facebook", "instagram", "reels", "download", "social media"]
+        case .tweaks: return ["youtube", "shorts", "thumbnails", "sponsorblock", "facebook", "instagram", "reels", "download", "social media", "linkedin", "minimal"]
         case .links: return ["air traffic control", "routing", "rules", "domains", "external", "mini window"]
         case .spaces: return ["accent", "colour", "color", "rename"]
         case .shortcuts: return ["keyboard", "keys", "hotkeys"]

@@ -123,6 +123,63 @@ public enum YouTubeHomeSection: String, CaseIterable, Identifiable {
     }
 }
 
+// MARK: - LinkedIn Minimal View
+
+/// What LinkedIn's minimal view can hide. The raw values are the words `linkedin-tweaks.css` and
+/// `.js` match (see `LinkedInTweaks`).
+public enum LinkedInPart: String, CaseIterable, Identifiable {
+    case navLabels
+    case leftColumn
+    case rightColumn
+    case composer
+    case promoted
+    case suggested
+    case games
+    case messagingWindow
+
+    public var id: String { rawValue }
+
+    public var displayName: String {
+        switch self {
+        case .navLabels: return "Labels under the top bar icons"
+        case .leftColumn: return "Left column"
+        case .rightColumn: return "Right column"
+        case .composer: return "Start a post"
+        case .promoted: return "Promoted posts and ads"
+        case .suggested: return "Suggested posts"
+        case .games: return "Puzzle games"
+        case .messagingWindow: return "Floating Messaging window"
+        }
+    }
+}
+
+/// Items of LinkedIn's top bar. Home, More and Me always stay.
+public enum LinkedInNavItem: String, CaseIterable, Identifiable {
+    case network
+    case jobs
+    case messaging
+    case notifications
+    case business
+    case learning
+    case premium
+
+    public var id: String { rawValue }
+
+    public var displayName: String {
+        switch self {
+        case .network: return "My Network"
+        case .jobs: return "Jobs"
+        case .messaging: return "Messaging"
+        case .notifications: return "Notifications"
+        case .business: return "For Business"
+        case .learning: return "Learning"
+        case .premium: return "Premium offer"
+        }
+    }
+
+    public static let hiddenByDefault: [LinkedInNavItem] = [.business, .learning, .premium]
+}
+
 // MARK: - Protection Scope
 
 /// Where a privacy protection applies, as Safari offers its advanced protections.

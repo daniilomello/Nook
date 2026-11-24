@@ -83,6 +83,9 @@ public final class NookSettingsService {
     private let facebookHideReelsKey = "settings.facebookHideReels"
     private let facebookHideSuggestedKey = "settings.facebookHideSuggested"
     private let redditSortHotKey = "settings.redditSortHot"
+    private let linkedInMinimalKey = "settings.linkedInMinimal"
+    private let linkedInHiddenPartsKey = "settings.linkedInHiddenParts"
+    private let linkedInHiddenNavItemsKey = "settings.linkedInHiddenNavItems"
 
     public var searchEngineId: String {
         didSet {
@@ -604,6 +607,21 @@ public final class NookSettingsService {
         didSet { userDefaults.set(redditSortHot, forKey: redditSortHotKey) }
     }
 
+    /// Show LinkedIn without the parts and top bar items below.
+    public var linkedInMinimal: Bool {
+        didSet { userDefaults.set(linkedInMinimal, forKey: linkedInMinimalKey) }
+    }
+
+    /// `LinkedInPart` raw values.
+    public var linkedInHiddenParts: [String] {
+        didSet { userDefaults.set(linkedInHiddenParts, forKey: linkedInHiddenPartsKey) }
+    }
+
+    /// `LinkedInNavItem` raw values.
+    public var linkedInHiddenNavItems: [String] {
+        didSet { userDefaults.set(linkedInHiddenNavItems, forKey: linkedInHiddenNavItemsKey) }
+    }
+
     public init() {
         // A new install starts with the blocker on; anyone who has run Nook keeps their choice.
         // Checked before register(defaults:), which would make both keys read as present.
@@ -653,6 +671,7 @@ public final class NookSettingsService {
             sponsorBlockEnabledKey: false,
             autoPictureInPictureKey: false,
             nestTabsFromLinksKey: true,
+            linkedInMinimalKey: true,
         ])
 
         // Initialize properties from UserDefaults
@@ -805,6 +824,11 @@ public final class NookSettingsService {
         self.facebookHideReels = userDefaults.bool(forKey: facebookHideReelsKey)
         self.facebookHideSuggested = userDefaults.bool(forKey: facebookHideSuggestedKey)
         self.redditSortHot = userDefaults.bool(forKey: redditSortHotKey)
+        self.linkedInMinimal = userDefaults.bool(forKey: linkedInMinimalKey)
+        self.linkedInHiddenParts = userDefaults.stringArray(forKey: linkedInHiddenPartsKey)
+            ?? LinkedInPart.allCases.map(\.rawValue)
+        self.linkedInHiddenNavItems = userDefaults.stringArray(forKey: linkedInHiddenNavItemsKey)
+            ?? LinkedInNavItem.hiddenByDefault.map(\.rawValue)
 
         if let data = userDefaults.data(forKey: siteSearchEntriesKey),
            let decoded = try? JSONDecoder().decode([SiteSearchEntry].self, from: data) {
