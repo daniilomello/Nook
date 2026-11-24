@@ -64,6 +64,7 @@ struct CompactRootView: View {
                     onScrollDirection: { condensed = $0 }
                 )
                 .ignoresSafeArea(.container, edges: .top)
+                .overlay { SiteBlockedView(session: session) }
             } else {
                 Color.clear
             }

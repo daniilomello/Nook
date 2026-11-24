@@ -1,6 +1,6 @@
 #!/bin/bash
 # Runs every check in the repo and exits non-zero if any fails: the Swift check programs, the
-# NookTabsCore package tests, the Rust crate tests and the node scripts.
+# NookTabsCore and NookBlocker package tests, the Rust crate tests and the node scripts.
 #   scripts/run-checks.sh [name ...]   only the checks whose name contains one of the words
 #   NOOK_CHECKS_LOCAL=1                also run the checks that cannot run unattended
 #   NOOK_CHECKS_JOBS=n                 parallel compiles (default: one per core)
@@ -166,6 +166,8 @@ done
 # ---- everything else ----
 extra "Packages/NookTabsCore swift test" 600 swift \
   swift test --package-path Packages/NookTabsCore --scratch-path "$root/build/NookTabsCore-spm"
+extra "Packages/NookBlocker swift test" 600 swift \
+  swift test --package-path Packages/NookBlocker --scratch-path "$root/build/NookBlocker-spm"
 # Same target dir as AdblockRustFFI/build.sh: a target/ under Nook/ breaks the Xcode build.
 extra "Nook/ThirdParty/AdblockRustFFI cargo test" 900 cargo \
   env CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-$root/build/AdblockRustFFI-target}" \

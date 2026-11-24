@@ -77,7 +77,9 @@ final class LinkPreviewService {
         let blocked = blocker.isEnabled && !blocker.isDomainAllowed(target.host)
             && (!engine.isLoaded
                 || engine.matches(url: target.absoluteString, sourceURL: session.webView?.url?.absoluteString ?? "", type: "document"))
-        guard Self.mayFetch(url: target, isPrivate: session.isPrivate, isAgent: session.isAgentPage, blocked: blocked) else {
+        // No preview of a site the site blocker would not open.
+        guard SiteBlocker.shared.verdict(for: target) == nil,
+              Self.mayFetch(url: target, isPrivate: session.isPrivate, isAgent: session.isAgentPage, blocked: blocked) else {
             set(.failed, for: url)
             return
         }

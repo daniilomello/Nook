@@ -29,6 +29,9 @@ for entry in "${LISTS[@]}"; do
   echo "$name $(wc -c < "$DEST/$name") bytes"
 done
 
+# The site blocker's adult-content domain list ships as a snapshot too.
+"$(dirname "$0")/refresh-adult-domains.sh" || echo "refresh-filter-lists: adult-domains not refreshed; keeping old copy" >&2
+
 # The stealth redirect table is generated from these lists, so it must follow them.
 cd "$(dirname "$0")/.."
 node scripts/build-redirects.mjs

@@ -26,6 +26,7 @@ struct SettingsSheet: View {
                 }
                 Section {
                     row(.adBlocker)
+                    row(.siteBlocking)
                     row(.links)
                 }
                 Section {
@@ -58,6 +59,7 @@ struct SettingsSheet: View {
         case .appearance: SettingsAppearanceTab()
         case .spaces: SpacesSettingsView()
         case .adBlocker: SettingsAdBlockerTab()
+        case .siteBlocking: SettingsSiteBlockingTab()
         case .links: LinksSettingsView()
         case .tweaks: SettingsTweaksTab()
         }

@@ -103,7 +103,8 @@ public enum YouTubeTweaks {
     /// One rule per selector: an unknown selector in a list would drop the whole rule.
     private static func css(for settings: NookSettingsService) -> String {
         var hidden: [String] = []
-        if settings.youTubeHideShorts { hidden += shortsSelectors }
+        // Blocked Shorts leave nothing to open, so their shelves and links go as well.
+        if settings.youTubeHideShorts || SiteBlockingStore.shared.settings.hidesYouTubeShorts { hidden += shortsSelectors }
         hidden += settings.youTubeHiddenHomeSections
             .compactMap(YouTubeHomeSection.init(rawValue:))
             .map { "ytd-browse[page-subtype=\"home\"] \($0.selector)" }

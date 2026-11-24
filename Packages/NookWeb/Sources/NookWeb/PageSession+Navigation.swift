@@ -342,6 +342,8 @@ extension PageSession: WKNavigationDelegate {
             decisionHandler(.cancel)
             return
         }
+        // Site blocking and safe search, for every frame of every kind of page.
+        if siteBlockingDecides(navigationAction, in: webView, decisionHandler: decisionHandler) { return }
         // A quiet page asks its gate first, in every frame, so nothing it reads can send it to
         // this network. A passed address comes back through here once and goes on.
         if isQuiet, let url = navigationAction.request.url, let scheme = url.scheme?.lowercased(),

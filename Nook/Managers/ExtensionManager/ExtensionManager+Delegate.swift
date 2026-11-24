@@ -759,7 +759,8 @@ extension ExtensionManager {
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.allowsBackForwardNavigationGestures = true
         webView.isInspectable = true
-        // No navigation delegate needed for options page
+        // The options page needs no navigation delegate of its own; site blocking still applies.
+        webView.navigationDelegate = SiteBlockingNavigationGuard.shared
 
         // WebKit exposes both `browser` and `chrome` in extension pages; no alias script needed.
 

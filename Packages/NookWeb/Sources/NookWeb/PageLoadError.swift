@@ -11,6 +11,8 @@ import Foundation
 public struct PageLoadError: Equatable {
     public enum Kind: Equatable {
         case offline, hostNotFound, noAnswer, certificate, other
+        /// Stopped by site blocking before it loaded; `message` says which list. See PageSession+SiteBlocking.
+        case blocked
     }
 
     public let url: URL
