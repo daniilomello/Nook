@@ -21,18 +21,46 @@ extension ExtensionManager {
     }
 }
 
-// MARK: - Extension Diagnostics (Debug builds only)
+// MARK: - Background lifetime
 
-#if DEBUG
 extension ExtensionManager {
 
     /// The context's background webview via a private WebKit property. Checked with
     /// `responds(to:)` first: plain KVC on a renamed property raises and would crash.
-    private func backgroundWebView(for context: WKWebExtensionContext) -> WKWebView? {
+    func backgroundWebView(for context: WKWebExtensionContext) -> WKWebView? {
         let key = "_backgroundWebView"
         guard (context as NSObject).responds(to: NSSelectorFromString(key)) else { return nil }
         return (context as NSObject).value(forKey: key) as? WKWebView
     }
+
+    /// Runs `action` once the context's present background ends. WebKit unloads an idle background
+    /// without closing the native side of its ports, and the next one's ports take the same
+    /// channel numbers: what a host says then goes to a port nobody reads, and a stale host is
+    /// sent the new background's messages (1Password's app answered one connection in two).
+    func whenBackgroundEnds(_ context: WKWebExtensionContext, _ action: @escaping @MainActor () -> Void) {
+        guard let webView = backgroundWebView(for: context) else { return }
+        let watch = objc_getAssociatedObject(webView, &BackgroundWatch.key) as? BackgroundWatch ?? BackgroundWatch()
+        watch.actions.append(action)
+        objc_setAssociatedObject(webView, &BackgroundWatch.key, watch, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+    }
+}
+
+/// Lives as long as the background webview it is attached to.
+private final class BackgroundWatch {
+    @MainActor static var key: UInt8 = 0
+    var actions: [@MainActor () -> Void] = []
+
+    deinit {
+        let actions = actions
+        // Inside WebKit's own teardown: the ports are closed once it has finished.
+        DispatchQueue.main.async { MainActor.assumeIsolated { actions.forEach { $0() } } }
+    }
+}
+
+// MARK: - Extension Diagnostics (Debug builds only)
+
+#if DEBUG
+extension ExtensionManager {
 
     /// Probe the background webview after load to check for JS-level errors.
     /// Output goes to Xcode debug console via NSLog for easy visibility.

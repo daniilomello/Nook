@@ -548,7 +548,8 @@ extension ExtensionManager {
         completionHandler: @escaping ((any Error)?) -> Void
     ) {
         if port.applicationIdentifier == ExtensionCompatBridge.applicationID {
-            compatBridge.connect(port, for: extensionContext)
+            let endIfBackground = compatBridge.connect(port, for: extensionContext)
+            whenBackgroundEnds(extensionContext, endIfBackground)
             return completionHandler(nil)
         }
         if compatBridge.mayOnlyReachBridge(extensionContext) {
@@ -585,6 +586,7 @@ extension ExtensionManager {
         handler.onClose = { [weak self, weak handler] in
             self?.nativeMessagingHandlers.removeAll { $0 === handler }
         }
+        whenBackgroundEnds(extensionContext) { [weak handler] in handler?.end() }
         handler.connect(port: port) { [weak self, weak handler] hostFound in
             guard let self, !hostFound else { return }
             self.nativeMessagingHandlers.removeAll { $0 === handler }

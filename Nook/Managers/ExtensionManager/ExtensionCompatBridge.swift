@@ -177,7 +177,9 @@ final class ExtensionCompatBridge {
 
     /// A `connectNative` to `applicationID`. The extension posts `{subscribe: [event names], lazy}`,
     /// `lazy` from a background that may be put to sleep; Nook posts `{event, args}`.
-    func connect(_ port: WKWebExtension.MessagePort, for context: WKWebExtensionContext) {
+    /// Returns what closes the port when it turns out to be a background's, for when that ends.
+    @discardableResult
+    func connect(_ port: WKWebExtension.MessagePort, for context: WKWebExtensionContext) -> @MainActor () -> Void {
         let id = context.uniqueIdentifier
         let listener = Listener(port)
         listeners[id, default: []].append(listener)
@@ -198,6 +200,12 @@ final class ExtensionCompatBridge {
                 self.listeners[id]?.removeAll { $0 === listener }
                 if let context { self.apis.values.forEach { $0.listenersChanged(context) } }
             }
+        }
+        return { [weak self, weak context, weak listener] in
+            guard let self, let listener, listener.isBackground else { return }
+            self.listeners[id]?.removeAll { $0 === listener }
+            listener.port.disconnect()
+            if let context { self.apis.values.forEach { $0.listenersChanged(context) } }
         }
     }
 
