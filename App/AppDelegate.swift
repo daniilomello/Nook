@@ -248,6 +248,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         // Saving happens in applicationShouldTerminate; this only stops child processes.
         AppDelegate.log.info("applicationWillTerminate called")
+        NativeMessagingHandler.stopAll()
 
         // Stop MCP child processes synchronously (blocking up to 5 seconds)
         mcpManager?.stopAllSync()

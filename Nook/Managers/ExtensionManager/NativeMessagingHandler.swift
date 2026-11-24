@@ -70,6 +70,26 @@ final class NativeMessagingHandler: NSObject {
         NSError(domain: errorDomain, code: code.rawValue, userInfo: [NSLocalizedDescriptionKey: description])
     }
 
+    /// SIGTERM, then SIGKILL for a host that stays.
+    private static func stop(_ process: Process) {
+        guard process.isRunning else { return }
+        process.terminate()
+        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 2) {
+            // Still the same process: Foundation has not reaped it, so its pid is not reused.
+            if process.isRunning { kill(process.processIdentifier, SIGKILL) }
+        }
+    }
+
+    /// Every port's process that has not ended.
+    @MainActor private static var running: [ObjectIdentifier: Process] = [:]
+
+    /// At quit. 1Password's helper does not end with its input, and stays while it waits for the
+    /// browser to be authorized.
+    @MainActor static func stopAll() {
+        for process in running.values where process.isRunning { kill(process.processIdentifier, SIGKILL) }
+        running.removeAll()
+    }
+
     // MARK: - Single-shot messages
 
     /// Launch the host, send one message, read one reply (5 s timeout), terminate.
@@ -126,7 +146,7 @@ final class NativeMessagingHandler: NSObject {
 
             let timedOut = done.wait(timeout: .now() + 5) == .timedOut
             // Terminating closes the pipes, which also unblocks a reader stuck after a timeout.
-            process.terminate()
+            Self.stop(process)
             if timedOut {
                 finish(nil, Self.error(.timedOut, "Host response timed out"))
             } else {
@@ -175,8 +195,12 @@ final class NativeMessagingHandler: NSObject {
                     self?.handleOutput(data)
                 }
             }
-            process.terminationHandler = { [weak self] _ in
-                DispatchQueue.main.async { self?.close(disconnectPort: true) }
+            process.terminationHandler = { [weak self] ended in
+                let key = ObjectIdentifier(ended)
+                DispatchQueue.main.async {
+                    MainActor.assumeIsolated { _ = Self.running.removeValue(forKey: key) }
+                    self?.close(disconnectPort: true)
+                }
             }
 
             do {
@@ -189,8 +213,11 @@ final class NativeMessagingHandler: NSObject {
             }
 
             DispatchQueue.main.async {
+                if process.isRunning {
+                    MainActor.assumeIsolated { Self.running[ObjectIdentifier(process)] = process }
+                }
                 guard !self.isClosed else {
-                    process.terminate()
+                    Self.stop(process)
                     return
                 }
                 self.process = process
@@ -219,11 +246,14 @@ final class NativeMessagingHandler: NSObject {
         }
     }
 
+    /// Main thread. Ends the conversation for an extension background that is gone.
+    func end() { close(disconnectPort: true) }
+
     /// Main thread.
     private func close(disconnectPort: Bool) {
         guard !isClosed else { return }
         isClosed = true
-        if let process, process.isRunning { process.terminate() }
+        if let process { Self.stop(process) }
         process = nil
         inputHandle = nil
         pendingMessages.removeAll()

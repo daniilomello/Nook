@@ -254,6 +254,49 @@
     };
   }
 
+  // WebKit runs an extension's service worker on the main thread, and its WebSocket constructor waits there for work
+  // queued on that same thread: the worker never runs again (measured on macOS 26.6). 1Password opens one between
+  // signing in and saving the account. So a worker's socket is one that could not connect, which every client expects.
+  // ponytail: no socket ever opens in a worker. Carrying them over the channel to Nook would make them real.
+  function sockets() {
+    var Native = g.WebSocket;
+    if (!inExtensionOrigin || !g.clients || !g.registration || typeof Native !== 'function') return;
+    var STATES = ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'];
+    class WebSocket extends EventTarget {
+      constructor(address) {
+        super();
+        var url;
+        try { url = new URL(address, g.location.href); } catch (e) {}
+        if (url) url.protocol = url.protocol.replace(/^http/, 'ws');
+        if (!url || !/^wss?:$/.test(url.protocol) || url.hash) throw new DOMException('Invalid url for WebSocket ' + address, 'SyntaxError');
+        this.url = url.href;
+        this.readyState = 0;
+        this.protocol = this.extensions = '';
+        this.bufferedAmount = 0;
+        this.binaryType = 'blob';
+        this.onopen = this.onmessage = this.onerror = this.onclose = null;
+        // Not at once: some clients connect again from their close handler.
+        setTimeout(this.close.bind(this), 1000);
+      }
+      send() { if (this.readyState === 0) throw new DOMException('The WebSocket is not open', 'InvalidStateError'); }
+      close() {
+        if (this.readyState > 1) return;
+        this.readyState = 2;
+        var socket = this;
+        setTimeout(function () {
+          socket.readyState = 3;
+          [new Event('error'), Object.assign(new Event('close'), { code: 1006, reason: '', wasClean: false })].forEach(function (e) {
+            var on = socket['on' + e.type];
+            if (typeof on === 'function') on.call(socket, e);
+            socket.dispatchEvent(e);
+          });
+        }, 0);
+      }
+    }
+    STATES.forEach(function (name, i) { WebSocket[name] = WebSocket.prototype[name] = i; });
+    Object.defineProperty(g, 'WebSocket', { value: WebSocket, configurable: true, writable: true });
+  }
+
   // Chrome holds a content script's message until the worker has started. WebKit answers it at once with nothing while
   // the worker has no listener yet, as on its first run after an install or an update. So a content script's first
   // message waits until the worker's shim answers a question no listener of the extension's ever sees.
@@ -827,7 +870,7 @@
   }
 
   // Each part stands alone: a failure in one must never stop the extension's own code from loading.
-  [identity, globals, imports].forEach(function (part) { try { part(); } catch (e) {} });
+  [identity, globals, imports, sockets].forEach(function (part) { try { part(); } catch (e) {} });
   var roots = g.browser && g.browser !== g.chrome ? [g.chrome, g.browser] : [g.chrome];
   roots.forEach(function (root) {
     [channel, startup, answers, ownChannel, surface].forEach(function (part) { try { part(root); } catch (e) {} });

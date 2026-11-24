@@ -436,6 +436,23 @@ public final class TabsController {
         return favorites + rows(space: spaceID).filter { !$0.item.isFolder }.map(\.item.id)
     }
 
+    /// `displayOrder(inSpace:)` as extensions see it: a tab with a page stays listed, in its sidebar
+    /// place, while its folder is closed. WebKit drops the active tab and refuses its content
+    /// scripts' messages when the window's list does not hold it. Reads only observed state too.
+    public func extensionOrder(inSpace spaceID: UUID) -> [UUID] {
+        guard let owner = owner(ofSpace: spaceID) else { return [] }
+        let shown = displayOrder(inSpace: spaceID)
+        let visible = Set(shown)
+        let source = tree(owner)
+        // `sessions` covers private windows too, which is why `spaceID(of:)` is asked of this tree.
+        let hidden = Set(sessions.map(\.itemID).filter { !visible.contains($0) && source.spaceID(of: $0) == spaceID })
+        guard !hidden.isEmpty else { return shown }
+        let favorites = source.favorites(of: spaceID).map(\.id)
+        let rows = source.visibleRows(space: spaceID, openFolders: Set(source.items.keys))
+        return favorites + rows.filter { !$0.item.isFolder }.map(\.item.id)
+            .filter { visible.contains($0) || hidden.contains($0) }
+    }
+
     public func isVisibleInAnyWindow(_ itemID: UUID) -> Bool {
         allWindows.contains { window in
             window.selectedItemID == itemID
