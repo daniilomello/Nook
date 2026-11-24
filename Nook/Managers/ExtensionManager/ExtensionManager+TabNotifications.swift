@@ -56,14 +56,14 @@ extension ExtensionManager {
         return created
     }
 
-    /// The window's tabs as `TabsController.displayOrder(in:)` lists them, kept per space until
+    /// The window's tabs as `TabsController.extensionOrder(inSpace:)` lists them, kept per space until
     /// the tab model changes. Everything that order reads is observed except
     /// `WindowRegistry.windows`, which only matters for a private space, and a private space
     /// lives only in its own window: `attach(window:)` makes its tree before anything can ask
     /// for it, and `detach(window:)` clears that tree.
     func tabOrder(in window: BrowserWindowState) -> ExtensionTabOrder {
         guard let tabs = browserManagerRef?.tabs, let spaceID = window.spaceID else { return .empty }
-        return tabOrders.order(for: spaceID) { tabs.displayOrder(inSpace: spaceID) }
+        return tabOrders.order(for: spaceID) { tabs.extensionOrder(inSpace: spaceID) }
     }
 
     /// Adapters for the window's tabs, in `tabOrder(in:)` order. They all sit in the window's

@@ -540,8 +540,11 @@ extension TabsController {
         let currentURL = current?.url ?? (wasSynced ? device.openPages[itemID]?.url : nil)
         // Extensions see the move against the window list the tab was in.
         // ponytail: only the moved item is reported, not tabs inside a moved folder.
-        let oldWindow = regularWindows.first { displayOrder(in: $0).contains(itemID) }
-        let oldIndex = oldWindow.flatMap { displayOrder(in: $0).firstIndex(of: itemID) }
+        let extensionOrder: (BrowserWindowState) -> [UUID] = { window in
+            window.spaceID.map { self.extensionOrder(inSpace: $0) } ?? []
+        }
+        let oldWindow = regularWindows.first { extensionOrder($0).contains(itemID) }
+        let oldIndex = oldWindow.flatMap { extensionOrder($0).firstIndex(of: itemID) }
         let before = tree(owner).item(itemID)
         guard perform(owner, "move", { try $0.move(itemID, to: parent, after: after, currentURL: currentURL) }) != nil else { return }
         if let before, before.parent != parent { dismissFromLiveFolder(before) }
