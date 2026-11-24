@@ -586,6 +586,24 @@ assert.equal(importing.context.IMPORTED.join(), '/a.js+b.js,https://cdn.test/tes
 const importingAll = load('chrome', 'extension', { before: `globalThis.native = () => {}; globalThis.importScripts = native;` });
 assert.equal(importingAll.run('importScripts === native'), true);
 
+// A worker's socket never reaches WebKit's constructor, which stops the worker for good. It fails as an unreachable one.
+const web = { EventTarget, Event, DOMException };
+const native = `globalThis.native = class { constructor() { throw new Error('stuck'); } }; globalThis.WebSocket = native;`;
+const socketWorker = load('chrome', 'extension', { globals: web, before: `globalThis.clients = {}; globalThis.registration = {}; ${native}` });
+const seen = await socketWorker.run(`new Promise(done => {
+  const socket = new WebSocket('https://push.test/path'), seen = [socket.url, socket.readyState, socket instanceof EventTarget];
+  try { socket.send('x'); } catch (e) { seen.push(e.name); }
+  socket.onerror = () => seen.push('error');
+  socket.addEventListener('close', e => { seen.push('close', e.code, e.wasClean, socket.readyState); done(seen.join()); });
+})`);
+assert.equal(seen, 'wss://push.test/path,0,true,InvalidStateError,error,close,1006,false,3');
+assert.equal(socketWorker.run(`[WebSocket.CONNECTING, WebSocket.OPEN, WebSocket.CLOSED].join()`), '0,1,3');
+assert.equal(socketWorker.run(`try { new WebSocket('ftp://push.test'); 'made' } catch (e) { e.name }`), 'SyntaxError');
+// Closed by its owner before it failed: one close event, not two.
+assert.equal(await socketWorker.run(`new Promise(done => { let closes = 0; const s = new WebSocket('wss://push.test'); s.onclose = () => closes++; s.close(); setTimeout(() => done(closes), 1300); })`), 1);
+// A page's socket, and a content script's, is WebKit's own.
+for (const kind of ['extension', 'content']) assert.equal(load('chrome', kind, { globals: web, before: native }).run('WebSocket === native'), true);
+
 console.log('extension compat shim: all checks passed');
 // The relay's message ports stay open, and would keep the process alive.
 process.exit(0);
