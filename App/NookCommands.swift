@@ -100,6 +100,15 @@ struct NookCommands: Commands {
                     )
                 )
             }
+            Button("Import from Chrome\u{2026}") {
+                browserManager.dialogManager.showDialog(
+                    ChromeImportDialog(
+                        onClose: {
+                            browserManager.dialogManager.closeDialog()
+                        }
+                    )
+                )
+            }
         }
 
         // Replace the standard Quit menu item to route through showQuitDialog(),

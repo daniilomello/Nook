@@ -28,6 +28,7 @@ struct ImportStage: View {
                 .foregroundStyle(.white)
             HStack(spacing: 24) {
                 browserButton(icon: "globe", name: "Arc", browser: .arc)
+                browserButton(icon: "globe", name: "Chrome", browser: .chrome)
                 browserButton(icon: "safari", name: "Safari", browser: .safari)
                 browserButton(icon: "globe", name: "Dia", browser: .dia)
             }
