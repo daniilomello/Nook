@@ -29,9 +29,9 @@ Os dados do app ficam em `~/Library/Application Support/<bundle id>/`. Trocar o 
 - Requisito de máquina: componente Metal Toolchain do Xcode (`xcodebuild -downloadComponent MetalToolchain`).
 
 ### Fase 1 — Migração do Chrome
-Um importador "Chrome" ao lado de Arc/Dia/Safari, com escolha do perfil (há 4 no Chrome: Default, Profile 1, 2 e 3).
+Um importador "Chrome" ao lado de Arc/Dia/Safari, com escolha do perfil (há 4 no Chrome: Default, Profile 1, 2 e 3). Tudo entra no space atual do Nook, então a importação roda uma vez por perfil/space. Fica em File › Import from Chrome… e no onboarding.
 
-- **Histórico:** copia o arquivo `History` do perfil (o Chrome mantém o original travado enquanto está aberto), lê as tabelas `urls` e `visits`, converte as datas e entrega para `historyManager.importVisits`.
+- **Histórico:** copia o arquivo `History` do perfil (o Chrome mantém o original travado enquanto está aberto), lê as tabelas `urls` e `visits`, converte as datas e entrega para `historyManager.importVisits`. Só os últimos 100 dias: é o que o Nook guarda (`HistoryManager.retentionDays`).
 - **Cookies:** copia o arquivo `Cookies`, decifra os valores com a chave "Chrome Safe Storage" do Chaveiro e grava no `httpCookieStore` do perfil do Nook. O macOS mostra um pedido de acesso ao Chaveiro na hora, que só você aprova.
 - **Extensões e 1Password:** reaproveita `parseChromiumExtensionIDs` + `installFromWebStore`, com uma tela para escolher quais das extensões do Chrome instalar (são 28 no perfil Default; nem todas funcionam no WebKit).
 - **Favoritos:** o arquivo `Bookmarks` do Chrome é JSON; entra como pastas fixadas, como já é feito com o Safari.
@@ -45,10 +45,10 @@ Limites conhecidos:
 Um recurso só, com categorias, no pacote compartilhado `NookWeb`: vale para Mac e iPhone sem código duplicado.
 
 - Ponto de corte: `PageSession+Navigation.swift`, no `decidePolicyFor` do quadro principal. Domínio bloqueado cancela a navegação e mostra uma página "bloqueado" do próprio navegador.
-- **Redes sociais:** lista curta e editável, ligada por padrão (facebook, instagram, x/twitter, tiktok, threads, reddit, linkedin, youtube shorts — a lista exata é decisão sua).
-- **Pornografia:** lista pública grande (dezenas de milhares de domínios), embutida no app e atualizada junto com as listas do ad-block. Fica em um conjunto em memória, não em regras do WebKit, que têm limite de tamanho.
-- Busca segura forçada no Google, Bing, DuckDuckGo e YouTube, para o conteúdo não aparecer nos resultados e miniaturas.
-- Também bloqueia os mesmos domínios como sub-recurso (iframes, imagens) via regra de conteúdo, para embeds.
+- **Redes sociais:** lista curta, cada site com sua chave. Ligados por padrão: Facebook, Instagram, X/Twitter, TikTok, Threads, Reddit, Snapchat, Pinterest, Tumblr e YouTube Shorts. Presentes e desligados: LinkedIn e YouTube inteiro.
+- **Pornografia:** lista OISD NSFW (GPL-3.0, 498.801 domínios), embutida no app como um arquivo de hashes de 4 MB mapeado em memória e atualizada a cada 3 dias. Não usa regras do WebKit, que têm limite de tamanho.
+- Busca segura forçada no Google, Bing, DuckDuckGo, Brave e Yahoo. O modo restrito do YouTube ficou de fora: o WebKit não permite forçá-lo.
+- Iframes de domínios bloqueados também são cortados. Imagens e scripts desses domínios dentro de outras páginas ainda carregam.
 - Ajustes: liga/desliga por categoria, lista própria de domínios, exceções.
 
 Limite: o bloqueio vale dentro deste navegador. No iPhone o Safari continua existindo; para fechar essa porta, o caminho é o Tempo de Uso do iOS (restrição de conteúdo adulto) ou um DNS com filtro. Entra como passo opcional na Fase 3.
@@ -64,7 +64,8 @@ Mesmo esquema do Take Mobile: Apple ID gratuito, perfil de 7 dias, renovação a
 Limites da conta gratuita:
 - Não dá para definir como navegador padrão no iPhone: isso exige um entitlement que a Apple só libera para conta paga e mediante pedido. Links de outros apps continuam abrindo no Safari.
 - Sem iCloud: a sincronização Mac ↔ iPhone que o upstream está fazendo (`feature/icloud-sync`) não funciona. Alternativa futura: sincronizar pela rede local, como o Take faz.
-- O alvo pede iOS 26 e o entitlement de memória ampliada; pode ser preciso remover esse entitlement no time gratuito.
+- O alvo pede iOS 26 (o iPhone 15 está no 26.6.2). O entitlement de memória ampliada foi aceito pelo time gratuito.
+- Compilar pelo Xcode (GUI) falha na assinatura dos bundles de recursos dos pacotes; `scripts/ios-install.sh` contorna isso com `scripts/ios-signing.xcconfig`.
 - Até 3 apps de conta gratuita instalados por aparelho (o Take Mobile ocupa uma vaga).
 
 ### Fase 4 — Acabamento
@@ -81,8 +82,17 @@ Fase 0 ──► Fase 1 (Chrome) ──► uso diário no Mac
 
 Fases 1 e 2 são independentes entre si. A Fase 3 depende da 2 para o iPhone já nascer com os bloqueios.
 
-## 4. Decisões em aberto
+## 4. Arquivos do upstream alterados
+O resto do fork são arquivos novos. Estes são os pontos onde um merge do upstream pode dar conflito:
+
+- Identidade: `Nook.xcodeproj/project.pbxproj` (bundle id), `Nook/Info.plist` (Sparkle), `.gitignore`.
+- Chrome: `App/NookCommands.swift`, `Onboarding/OnboardingView.swift`, `Onboarding/Stages/ImportStage.swift`.
+- Bloqueio: `Packages/NookWeb/.../PageSession+Navigation.swift`, `PageSession+Scripts.swift`, `PageLoadError.swift`; `Packages/NookTweaks/.../YouTubeTweaks.swift`; `Packages/NookBlocker/Package.swift`; `Nook/Components/WebsiteView/LoadErrorView.swift`; `Nook/Components/Settings/SettingsUtils.swift` e `SettingsWindow.swift`; `Nook/Managers/ExtensionManager/ExtensionManager+Delegate.swift` e `ExtensionPopupWindow.swift`; `Nook/Managers/LinkPreview/LinkPreviewService.swift`; `NookiOS/BrowserModel+Chrome.swift`, `Chrome/SettingsSheet.swift`, `RootView.swift`, `RootView+iPad.swift`; `scripts/refresh-filter-lists.sh`, `scripts/run-checks.sh`.
+- iOS: `Packages/NookUI/.../Settings/Boosts.swift` (uma linha, correção de build).
+
+O andamento está em `docs/fork/TASKS.md`. Os testes rodam com `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer ./scripts/run-checks.sh`.
+
+## 5. Decisões em aberto
 - Nome do navegador (não trava nada: o bundle id é independente do nome).
 - Qual perfil do Chrome migrar primeiro.
-- Lista exata de redes sociais bloqueadas, e se o YouTube entra inteiro ou só os Shorts.
 - Se o bloqueio pode ser desligado nos ajustes com um clique ou se deve ter algum atrito (espera, senha).
